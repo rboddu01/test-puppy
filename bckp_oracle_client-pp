@@ -1,0 +1,63 @@
+###
+#
+# Description: Oracle_client Installation and configuration
+#
+###
+class jboss::oracle_client (
+  $ora_client_version   =  18.3,
+  $ora_ver              =  "$jboss::oracle::ora_ver",
+  $ora_client_pkgs      = [ 'basic', 'sqlplus', 'jdbc', 'devel' ]
+){
+
+  Exec { path => '/opt/puppetlabs/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/puppetlabs/bin' }
+
+  # $ora_client_major_version = inline_template("<% @ora_client_version.to_i %>")
+   $ora_client_major_version = split($ora_client_version,'\.')[0]
+  
+
+  $rpms_dir   = '/tmp/oraclient_rpms'
+  $pkg_name   = "oracle-instantclient${ora_client_version}"
+  $rpm_source = "puppet:///modules/$module_name/oracle_client/${ora_client_major_version}/rpms/"
+
+  ## Copy  files/ora_client/${ora_ver}/rpms/ to /tmp/oraclient_rpms/
+  file { $rpms_dir:
+    ensure  => 'directory',
+    source  => $rpm_source,
+    recurse => 'remote',
+    replace => true
+  }
+  ## Installation
+  #$oracleclient_version_major =  inline_template("<% @oracleclient_version.to_i %>") #split($oracleclient_version,'\.')[0]
+  $oracleclient_version_major = $oracleclient_version
+   if ($oracleclient_version_major > 0) { # and ($oracleclient_version_major < $ora_client_major_version ) {
+
+###############################################################################
+  notify {"oracleclient Install Check-1 : $oracleclient_version":}            #
+  notify {"oracleclient Major Install Check-2 : $ora_client_major_version":}  #
+  notify {"oracleclient Major Install Check-3 : $oracleclient_version_major":}#
+###############################################################################
+
+  # Uninstall 
+    $ora_client_pkgs.each | $rpm | {
+        $rpm_name = "${pkg_name}-$rpm"
+        exec { "Uninstall $rpm_name":
+          command => "rpm -e $rpms_dir/${rpm_name}-*",
+          onlyif  => "rpm -qa | grep $rpm_name",
+          require => File[$rpms_dir]
+        }
+     }
+  }  
+
+  ## install 
+  $ora_client_pkgs.each | $rpm | {
+    $rpm_name = "${pkg_name}-$rpm"
+    exec { "Install $rpm_name":
+      command => "rpm -ivh $rpms_dir/${rpm_name}-*",
+      unless  => "rpm -qa | grep $rpm_name",
+      require => File[$rpms_dir]
+    }
+  }
+ }
+
+##  End Class
+

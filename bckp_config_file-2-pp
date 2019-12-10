@@ -1,0 +1,114 @@
+class jboss::config_file {
+# This is to copy required config files:
+##SRE Files##
+  #if $mod_type == 'sre'{
+    $files = [
+             "${jboss::install_path}/${jboss::app_module}/configuration/dhw.jks",
+             "${jboss::install_path}/${jboss::app_module}/configuration/wild.jks",
+
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-annotations.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-c3p0.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-commons-annotations.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-core.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-ehcache.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-entitymanager.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-jmx.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-oscache.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-proxool.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-swarmcache.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/hibernate-validator.jar",
+             "${jboss::install_path}/modules/dhw/org/hibernate/5/main/javassist.jar",
+    ]
+ # }
+  ##IWS Files##
+  # if $mod_type == 'iws'{
+  ##         "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/at_dhw_fdsh_sbm_intg.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/at_dhw_fdsh_sbm_qual.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/dhw-int-ts.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/idp-meta.xml",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/irs_dhw_fdsh_sbm_dev.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/lc.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/nonesimec_dhw_fdsh_sbm_dev.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/ridp_dhw_fdsh_sbm_dev.jks",
+  #          "${jboss::install_path}/modules/dhw/conf/${jboss::app_module}/main/properties/sp-meta.xml",
+  #  ]
+  #}
+
+  $files.each | $fle | {
+    $flname=$fle.split ('/')[-1]
+    #notify{"Creating $flname":}
+   file{$fle:
+     mode     => '0755',
+     owner    => $jboss::user,
+     group    => $jboss::group,
+     source   => "puppet:///modules/${module_name}/$flname",
+     ensure   => 'file',
+     #require => File["$jboss::req_dirs"],
+    }
+ }
+
+##Copy Oracle Client Config Files##
+notify {"oracleclient OLD - $oracleclient_version":}
+  if $oracleclient_version == 18 {
+
+    $ora_client_files = [ 
+      "libclntshcore.so.18.1",
+      "libclntsh.so.18.1",
+      "libheteroxa18.so",
+      "libipc1.so",
+      "libmql1.so",
+      "libnnz18.so",
+      "libocci.so.18.1",
+      "libociei.so",
+      "libocijdbc18.so",
+      "libons.so",
+      "liboramysql18.so",
+      "ojdbc8.jar",
+      "orai18n.jar",
+      "orai18n-mapping.jar",
+      "xdb6.jar",
+      "xmlparserv2.jar",
+      "xstreams.jar",
+    ]
+  }
+
+##Copy Oracle Client Config Files##
+  notify {"oracleclient - $oracleclient_version":}
+  if $oracleclient_version == 12 {
+
+    $ora_client_files = [
+      "libclntshcore.so.12.1",
+      "libclntsh.so.12.1",
+      "libheteroxa12.so",
+      "libipc1.so",
+      "libmql1.so",
+      "libnnz12.so",
+      "libocci.so.12.1",
+      "libociei.so",
+      "libocijdbc12.so",
+      "libons.so",
+      "liboramysql12.so",
+      "ojdbc6.jar",
+      "ojdbc7.jar",
+      "orai18n.jar",
+      "orai18n-mapping.jar",
+      "xdb6.jar",
+      "xmlparserv2.jar",
+      "xstreams.jar",
+    ]
+    $ora_client_files.each | $ora_fle | {
+    file{"${jboss::install_path}/modules/dhw/com/oracle/main/$ora_fle":
+      mode     => '0755',
+      owner    => $jboss::user,
+      group    => $jboss::group,
+      source   => "puppet:///modules/${module_name}/oracle_client/${oracleclient_version}/main/$ora_fle",
+      ensure   => 'present',
+      #multiple => true,
+    }
+  }
+
+  }
+
+   }
+
+##  End Class
